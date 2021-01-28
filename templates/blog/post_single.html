@@ -1,0 +1,117 @@
+{% extends 'base/base.html' %}
+
+{% load static %}
+{% block title %}
+    zoomit || {{ post.title }}
+{% endblock %}
+{% block body %}
+    <div class="container">
+        <div class="card" style="width:100%">
+            <img class="card-img-top" src="{{ post.image.url }}" alt="Card image cap">
+            <div class="card-body">
+                <h5 class="card-title">{{ post.title }}</h5>
+                {% if settings.author %}
+                    <p>
+                        نویسنده: {{ author.first_name }} {{ author.last_name }}
+                    </p>
+                {% endif %}
+                <p> دسته بندی: <a href="{% url 'category_single' category.slug %}">{{ category.title }}</a>
+                    تاریخ انتشار: {{ post.publish_time }}
+                </p>
+                <p class="card-text">
+                    {{ post.content }}
+                </p>
+                {% if settings.allow_discussion %}
+                    {% if settings.comment %}
+                        <form id="comment_form">
+                            {% csrf_token %}
+                            {% include 'component/form.html' %}
+                            <input type="submit" value="ok">
+                        </form>
+                    {% endif %}
+                    <div id="comment_container">
+                        {% for comment in comments %}
+                            <div>
+                                {{ comment.author.full_name }}
+                                <div class="mt-3">
+                                    <div>
+                                        {{ comment.content }}
+                                    </div>
+                                    <div>
+                                        dislikse:<span id="dislike_count_container{{ comment.id }}">{{ comment.dislike_count }}</span>
+                                        <br>
+                                        likes:<span id="like_count_container{{ comment.id }}">{{ comment.like_count }}</span>
+                                    </div>
+
+                                    <div>
+                                        <button onclick="likeComment({{ comment.id }})">
+                                            like
+                                        </button>
+                                        <button onclick="likeComment({{ comment.id }} , false)">
+                                            dislike
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block javascript %}
+    <script>
+        function likeComment(commentID, condition = true) {
+            const data = JSON.stringify({comment_id: commentID, condition})
+            $.ajax({
+                type: "post",
+                url: "{% url 'like_comment' %}",
+                data: data,
+                success: function (response) {
+                    const data = JSON.parse(response)
+                    $(`#like_count_container${commentID}`).text(data.like_count);
+                    $(`#dislike_count_container${commentID}`).text(data.dislike_count);
+                }
+            });
+        }
+    </script>
+    <script>
+        document.getElementById("comment_form").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const content = $('#id_content').val()
+            const data = JSON.stringify({content, post_id:{{post.id}}})
+            $.ajax({
+                type: "post",
+                url: "{% url 'add_comment' %}",
+                data: data,
+                success: function (response) {
+                    const data = JSON.parse(response)
+                    $( "#comment_container" ).prepend( `<div>
+                                ${data.full_name}
+                                <div class="mt-3">
+                                    <div>
+                                         ${data.content}
+                                    </div>
+                                    <div>
+                                        dislikse:<span id="dislike_count_container${data.comment_id}">${data.dislike_count}</span>
+                                        <br>
+                                        likes:<span id="like_count_container${data.comment_id}">${data.like_count}</span>
+                                    </div>
+                                    <div>
+                                        <button onclick="likeComment(${data.comment_id})">
+                                            like
+                                        </button>
+                                        <button onclick="likeComment(${data.comment_id} , false)">
+                                            dislike
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>` );
+                }
+            });
+        }, false);
+    </script>
+{% endblock %}

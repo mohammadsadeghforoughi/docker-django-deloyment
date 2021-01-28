@@ -1,0 +1,7 @@
+{% extends 'base/base.html' %}
+{% block body %}
+    {{ category.slug }}
+    {% for post in category.posts.all %}
+        {{ post.title }}
+    {% endfor %}
+{% endblock %}
