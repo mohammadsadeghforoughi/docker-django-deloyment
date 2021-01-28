@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 
-RUN apk update \
+RUN echo 'nameserver 185.51.200.2'>>/etc/resolv.conf && apk update \
     && apk add --virtual build-deps gcc python3-dev musl-dev \
     && apk add postgresql \
     && apk add postgresql-dev \
